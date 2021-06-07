@@ -1,13 +1,12 @@
 from service.sql_server_service import SQLServerService
+from repositories.covid_repository import CovidRepository
 
 def main():
-    print('init service')
-    service = SQLServerService()
-    print('test service')
-    service.createCountriesTable()
-    print('created countries table')
-    service.createCasesTable()
-    print('created cases table')
+    
+    repository = CovidRepository()
+    repository.getAllCountries()
+    #service = SQLServerService()
+    
 
 main()
 
