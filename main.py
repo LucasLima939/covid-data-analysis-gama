@@ -4,7 +4,8 @@ from repositories.covid_repository import CovidRepository
 def main():
     
     repository = CovidRepository()
-    repository.getAllCountries()
+    countriesSlugs = repository.getAllCountries()
+    repository.getAllCountriesCovidInfos(countriesSlugs)
     #service = SQLServerService()
     
 
