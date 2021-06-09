@@ -5,27 +5,23 @@ import json
 
 class S3Service:
     def __init__(self):
-        self.s3_client = boto3.client('s3',
-                            aws_access_key_id='AKIA2YDDKTIHRZHHPUDA',
-                            aws_secret_access_key='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'
-                            )
+        self.s3 = boto3.resource('s3',
+        region_name='us-east-1',
+        aws_access_key_id='',
+        aws_secret_access_key='')
 
 
-    def upload_object(self, file_name, bucket, object_name=None):
-        if object_name is None:
-            object_name = file_name
-
-        try:
-            response = self.s3_client.upload_file(file_name, bucket, object_name)
-        except ClientError as e:
-            logging.error(e)
-            return False
-
-        return True
-    
-    def upload_list_json(self, json_list):
-       self.s3_client.Object('accmeprojeto', 'countries_list.json').put(Body=(bytes(json.dumps(json_list).encode('UTF-8'))))
+    def upload_object(self, json_list, object_name):
         
 
-
-    #upload_object('C:/Users/Franc/OneDrive/Documentos/Altiere/Accenture/texto2.txt', 'accmeprojeto')
+        try:
+            data = json.dumps(json_list)
+            response = self.s3.Bucket('accmeprojeto').put_object(Key=object_name+'.json', Body=data)
+            print(response)
+            return True
+        except ClientError as ce:
+            logging.error(ce)
+            return False
+        except Exception as e:
+            print(e)
+            return False
