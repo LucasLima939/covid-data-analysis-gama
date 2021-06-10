@@ -6,32 +6,45 @@ from datetime import timedelta
 
 class CovidRepository:
     def get_all_countries(self):
+        print('getting all countries')
         res = requests.get('https://api.covid19api.com/countries')
         if res.status_code != 200:
             print(res)
             raise Exception
         countries_json = res.json()
+        print('all countries retrieved successfully!')
         return list(map(lambda x: x['Slug'], countries_json))
 
     def get_all_countries_covid_infos(self, countriesSlugs):
         s3_service = S3Service()
         self.countries_json_list = list()
         self.cases_json_list = list()  
-
+        print('INIT getting data for each country')
+        print('-------------------------------')
         for slug in countriesSlugs:
             if slug == 'united-states':
-                CovidRepository.getUnitedStatesInfos()
+                print('getting data from united-states')
+                CovidRepository.getUnitedStatesInfos(self)
             else:
-                covid_info_list = CovidRepository.get_country_covid_infos(slug, slug, None, None)
+                covid_info_list = CovidRepository.get_country_covid_infos(slug, None, None)
                 if not covid_info_list:
-                    print('empty list')
+                    print('empty list from ' + slug)
+                    print('-------------------------------')
                 else:
-                    CovidRepository.extract_country_from_json(covid_info_list[0])
+                    CovidRepository.extract_country_from_json(self, covid_info_list[0])
 
-                    CovidRepository.extract_case_from_json_list(covid_info_list)
+                    CovidRepository.extract_case_from_json_list(self, covid_info_list)
+
+
+                    print('all data from ' + slug + ' fetched')
+                    print('COUNTRIES list lenght: ' +   str(len(self.countries_json_list)))
+                    print('CASES list count: ' + str(len(self.cases_json_list)))
+                    print('-------------------------------')
             
+        print('all data recovered, initing upload to s3')
         s3_service.upload_list_json(self.countries_json_list, 'countries_json')
         s3_service.upload_list_json(self.cases_json_list, 'covid_infos_json')
+        print('finished upload to s3')
 
     def extract_country_from_json(self, info):
         country = {}
@@ -60,16 +73,22 @@ class CovidRepository:
         current_date = datetime(2020,1,1)
         final_date = datetime(2021,6,7)
         while current_date <= final_date:
-            current_date += timedelta(days=7)
-            to_date = current_date + timedelta(days=7)
-            covid_info_list = CovidRepository.get_country_covid_infos('united-states', current_date.strftime("%Y-%m-%dT%H:%M:%SZ"), to_date.strftime("%Y-%m-%dT%H:%M:%SZ"))
-            if(current_date <= final_date):
+            next_week = current_date + timedelta(days=7)
+            from_date = current_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+            to_date = next_week.strftime("%Y-%m-%dT%H:%M:%SZ")
+            covid_info_list = CovidRepository.get_country_covid_infos('united-states', from_date, to_date)
+            if(current_date == final_date):
                 CovidRepository.extract_country_from_json(covid_info_list[0])
-            CovidRepository.extract_case_from_json_list(covid_info_list)
+            CovidRepository.extract_case_from_json_list(self, covid_info_list)
+            current_date += timedelta(days=7)
+        print('all data from united states fetched')
+        print('finished day: ' + current_date)
+        print('countries list lenght: ' +   str(len(self.countries_json_list)))
+        print('cases list count: ' + str(len(self.cases_json_list)))
 
 
 
-    def get_country_covid_infos(self, slug, from_date, to_date):
+    def get_country_covid_infos(slug, from_date, to_date):
         if from_date is None:
             from_date = '2020-01-01T00:00:00Z'
         if to_date is None:
