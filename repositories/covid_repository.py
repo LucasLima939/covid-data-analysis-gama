@@ -13,6 +13,7 @@ class CovidRepository:
             raise Exception
         countries_json = res.json()
         print('all countries retrieved successfully!')
+         
         return list(map(lambda x: x['Slug'], countries_json))
 
     def get_all_countries_covid_infos(self, countriesSlugs):
@@ -42,8 +43,8 @@ class CovidRepository:
                     print('-------------------------------')
             
         print('all data recovered, initing upload to s3')
-        s3_service.upload_list_json(self.countries_json_list, 'countries_json')
-        s3_service.upload_list_json(self.cases_json_list, 'covid_infos_json')
+        s3_service.upload_object(self.countries_json_list, 'countries_json')
+        s3_service.upload_object(self.cases_json_list, 'covid_infos_json')
         print('finished upload to s3')
 
     def extract_country_from_json(self, info):
@@ -72,17 +73,19 @@ class CovidRepository:
     def getUnitedStatesInfos(self):
         current_date = datetime(2020,1,1)
         final_date = datetime(2021,6,7)
+        has_usa_cases_data = False
         while current_date <= final_date:
             next_week = current_date + timedelta(days=7)
             from_date = current_date.strftime("%Y-%m-%dT%H:%M:%SZ")
             to_date = next_week.strftime("%Y-%m-%dT%H:%M:%SZ")
             covid_info_list = CovidRepository.get_country_covid_infos('united-states', from_date, to_date)
-            if(current_date == final_date):
-                CovidRepository.extract_country_from_json(covid_info_list[0])
+            if(covid_info_list and not has_usa_cases_data):
+                CovidRepository.extract_country_from_json(self, covid_info_list[0])
+                has_usa_cases_data = True
             CovidRepository.extract_case_from_json_list(self, covid_info_list)
             current_date += timedelta(days=7)
         print('all data from united states fetched')
-        print('finished day: ' + current_date)
+        print('finished day: ' + current_date.strftime("%Y-%m-%dT%H:%M:%SZ"))
         print('countries list lenght: ' +   str(len(self.countries_json_list)))
         print('cases list count: ' + str(len(self.cases_json_list)))
 

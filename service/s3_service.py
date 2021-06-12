@@ -2,6 +2,7 @@ import boto3
 from botocore.exceptions import ClientError
 import logging
 import json
+import os
 
 class S3Service:
     def __init__(self):
@@ -11,15 +12,17 @@ class S3Service:
         aws_secret_access_key='q8+QgIjOupTXXNI29kzLq/6DcjYtIeHcqgiV/oKd')
         print('initialized s3 service')
 
+    
+    #metodo para fazer o download e salvar no pc
     def recover_json_file(self, object_name):
-        print('recovering file from s3: ' + object_name)
+                    #accmeprojeto -> nome do S3                 
+                    #object_name -> nome do arquivo no S3
+                    #froms3.json  -> nomre que vai salvar no pc
+                    #os.path.join(os.getcwd(), object_name) recupera o caminho do sistema
         try:
-            bucket = self.s3.Bucket('accmeprojeto')
-            bucket.download_file(object_name, '/home/lucaslima939/python-projects/covid-data-analysis-gama/content/' + object_name)
-            return True
+            self.s3.Bucket('accmeprojeto').download_file(object_name, os.path.join(os.getcwd(), object_name))
         except Exception as e:
             print(e)
-            return False
 
 
     def upload_object(self, json_list, object_name):

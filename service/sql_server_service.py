@@ -1,20 +1,26 @@
 import psycopg2
+import pandas as pd
+from sqlalchemy import create_engine
 
 class SQLServerService:
     def __init__(self):
-        self.conn = psycopg2.connect(host="localhost",
-                                database="postgres",
-                                user="postgres",
-                                password="postgres")
+        self.conn = create_engine('mysql+mysqlconnector://admin:accme159753@accme-database.c8fsb3usjei0.us-east-2.rds.amazonaws.com/accmedatabase')
 
-        self.cursor = self.conn.cursor()
-        print('----connection ongoing-----')
+
+        #self.cursor = self.conn.cursor()
 
     #def testConnection(self):
     #    self.cursor.execute('SELECT * FROM tb_historico_filmes')  
     #    print(self.cursor)
     #    for row in self.cursor:
     #        print(row)
+    def read_data(self, sql_query):
+        print('carregando dados...')
+        response = pd.read_sql(sql_query, con=self.conn)
+        print('dados carregados!')
+        print('------------------------')
+        print(response)
+        print('------------------------')
 
     def createCountriesTable(self):
         query = """CREATE TABLE tb_countries(
